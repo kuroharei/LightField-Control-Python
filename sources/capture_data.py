@@ -43,7 +43,8 @@ auto = Automation(True, List[String]())
 
 application = auto.LightFieldApplication
 experiment = application.Experiment
-filemanager = application.FileManager
+file_manager = application.FileManager
+data_manager = application.DataManager
 
 experiment.Load("FSRS-Blaze")
 
@@ -52,6 +53,9 @@ if device_found()==True:
 
     file_name = "SRS_data.spe"
 
-    data = experiment.Capture(1000)
+    dataset = experiment.Capture(1000)
 
-    filemanager.SaveFile(data, file_name)
+    file_manager.SaveFile(dataset, file_name)
+
+    data1 = [dataset.GetFrame(0, i) for i in range(0, 1000, 2)]
+    data2 = [dataset.GetFrame(0, i) for i in range(1, 1000, 2)]
