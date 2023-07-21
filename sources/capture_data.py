@@ -59,10 +59,8 @@ if __name__ == "__main__":
 
         file_manager.SaveFile(dataset, file_name)
 
-        data1 = List[System.Array]
-
-        data1 = [dataset.GetFrame(0, i) for i in range(0, 1000, 2)]
-        data2 = [dataset.GetFrame(0, i) for i in range(1, 1000, 2)]
+        data1 = List[Array]([dataset.GetFrame(0, i) for i in range(0, 1000, 2)])
+        data2 = List[Array]([dataset.GetFrame(0, i) for i in range(1, 1000, 2)])
 
 
 
