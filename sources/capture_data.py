@@ -11,7 +11,7 @@ import os
 from System.IO import *
 
 # Import c compatible List and String
-from System import String
+from System import String, Array
 from System.Collections.Generic import List
 
 # Add needed dll references
@@ -43,15 +43,28 @@ auto = Automation(True, List[String]())
 
 application = auto.LightFieldApplication
 experiment = application.Experiment
-filemanager = application.FileManager
+file_manager = application.FileManager
+data_manager = application.DataManager
 
-experiment.Load("FSRS-Blaze")
+if __name__ == "__main__":
 
-# Check for device and inform user if one is needed
-if device_found()==True:
+    experiment.Load("FSRS-Blaze")
 
-    file_name = "SRS_data.spe"
+    # Check for device and inform user if one is needed
+    if device_found() == True:
 
-    data = experiment.Capture(1000)
+        file_name = "SRS_data.spe"
 
-    filemanager.SaveFile(data, file_name)
+        dataset = experiment.Capture(1000)
+
+        file_manager.SaveFile(dataset, file_name)
+
+        data1 = List[System.Array]
+
+        data1 = [dataset.GetFrame(0, i) for i in range(0, 1000, 2)]
+        data2 = [dataset.GetFrame(0, i) for i in range(1, 1000, 2)]
+
+
+
+
+
