@@ -57,12 +57,15 @@ if __name__ == "__main__":
 
         dataset = experiment.Capture(1000)
 
+        data_format = dataset.GetFrame(0, 0).Format
+
         file_manager.SaveFile(dataset, file_name)
 
-        
-        data2 = List[Array]([dataset.GetFrame(0, i).GetData() for i in range(1, 1000, 2)])
+        data1 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(0, 1000, 2)]), dataset.Regions, data_format)
+        data2 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(1, 1000, 2)]), dataset.Regions, data_format)
 
-        data1 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(0, 1000, 2)]))
+        file_manager.SaveFile(data1, "on_data.spe")
+        file_manager.SaveFile(data2, "off_data.spe")
 
 
 
