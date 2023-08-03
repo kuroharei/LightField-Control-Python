@@ -1,5 +1,5 @@
 # Import the .NET class library
-import clr
+import clr, ctypes
 
 # Import python sys module
 import sys
@@ -7,12 +7,25 @@ import sys
 # Import os module
 import os
 
+# numpy import
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+import csv
+
+import time
+
 # Import System.IO for saving and opening files
 from System.IO import *
+
+from System.Threading import AutoResetEvent
 
 # Import c compatible List and String
 from System import String, Array
 from System.Collections.Generic import List
+from System.Runtime.InteropServices import Marshal
+from System.Runtime.InteropServices import GCHandle, GCHandleType
 
 # Add needed dll references
 sys.path.append(os.environ['LIGHTFIELD_ROOT'])
@@ -37,6 +50,57 @@ def device_found():
     print("Camera not found. Please add a camera and try again.")
     return False  
 
+# Creates a numpy array from our acquired buffer 
+def convert_buffer(net_array, image_format):
+    src_hndl = GCHandle.Alloc(net_array, GCHandleType.Pinned)
+    try:
+        src_ptr = src_hndl.AddrOfPinnedObject().ToInt64()
+
+        # Possible data types returned from acquisition
+        if (image_format==ImageDataFormat.MonochromeUnsigned16):
+            buf_type = ctypes.c_ushort*len(net_array)
+        elif (image_format==ImageDataFormat.MonochromeUnsigned32):
+            buf_type = ctypes.c_uint*len(net_array)
+        elif (image_format==ImageDataFormat.MonochromeFloating32):
+            buf_type = ctypes.c_float*len(net_array)
+                    
+        cbuf = buf_type.from_address(src_ptr)
+        resultArray = np.frombuffer(cbuf, dtype=cbuf._type_)
+
+    # Free the handle 
+    finally:        
+        if src_hndl.IsAllocated: src_hndl.Free()
+        
+    # Make a copy of the buffer
+    return np.copy(resultArray)
+
+def experiment_completed(sender, event_args):    
+    print("Experiment Completed")    
+    # Sets the state of the event to signaled,
+    # allowing one or more waiting threads to proceed.
+    acquireCompleted.Set()
+
+def save_file(filename):    
+    # Set the base file name
+    experiment.SetValue(
+        ExperimentSettings.FileNameGenerationBaseFileName,
+        Path.GetFileName(filename))
+    
+    # Option to Increment, set to false will not increment
+    experiment.SetValue(
+        ExperimentSettings.FileNameGenerationAttachIncrement,
+        False)
+
+    # Option to add date
+    experiment.SetValue(
+        ExperimentSettings.FileNameGenerationAttachDate,
+        False)
+
+    # Option to add time
+    experiment.SetValue(
+        ExperimentSettings.FileNameGenerationAttachTime,
+        False)
+
 # Create the LightField Application (true for visible)
 # The 2nd parameter forces LF to load with no experiment 
 auto = Automation(True, List[String]())
@@ -46,26 +110,102 @@ experiment = application.Experiment
 file_manager = application.FileManager
 data_manager = application.DataManager
 
-if __name__ == "__main__":
-
+def get_FSRS(frames, center_wavelenth, _file_name):
+    
     experiment.Load("FSRS-Blaze")
+
+    # Notifies a waiting thread that an event has occurred
+    # acquireCompleted = AutoResetEvent(False)
 
     # Check for device and inform user if one is needed
     if device_found() == True:
 
-        file_name = "SRS_data.spe"
+        # Hook the experiment completed handler
+        # experiment.ExperimentCompleted += experiment_completed    
 
-        dataset = experiment.Capture(1000)
+        pixels = 1340
 
-        data_format = dataset.GetFrame(0, 0).Format
+        experiment.SetValue(ExperimentSettings.AcquisitionFramesToStore, str(frames))
+        experiment.SetValue(SpectrometerSettings.GratingCenterWavelength, str(center_wavelenth))
 
-        file_manager.SaveFile(dataset, file_name)
+        # try:
 
-        data1 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(0, 1000, 2)]), dataset.Regions, data_format)
-        data2 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(1, 1000, 2)]), dataset.Regions, data_format)
+        #     # Pass location of saved file
+        #     save_file(_file_name)
 
-        file_manager.SaveFile(data1, "on_data.spe")
-        file_manager.SaveFile(data2, "off_data.spe")
+        #     # Acquire image in LightField
+        #     experiment.Acquire()
+
+        #     # Wait for acquisition to complete
+        #     acquireCompleted.WaitOne()
+        
+        # finally:
+        #     # Cleanup handler
+        #     experiment.ExperimentCompleted -= experiment_completed
+    
+        # Pass location of saved file
+        save_file(_file_name)
+
+        # Acquire image in LightField
+        experiment.Acquire()
+
+        time.sleep(15 + frames * 0.001)
+
+        # Get image directory
+        directory = experiment.GetValue(ExperimentSettings.FileNameGenerationDirectory)
+
+        file_path = '/'.join(directory.split('\\'))
+        with open(file_path + '/' + _file_name + '.csv') as f:
+            wavelenth = []
+            intensities = []
+            intensity = []
+            pixel = 0
+            for line in f:
+                x, y = map(float, line.split(','))
+                if pixel < 1340:
+                    wavelenth.append(x)
+                intensity.append(y)
+                pixel += 1
+                if pixel % pixels == 0:
+                    intensities.append(np.array(intensity))
+                    intensity =[]
+
+            ret1 = sum([intensities[i] / intensities[i + 1] - 1 for i in range(0, frames, 2)])
+            ret2 = sum([intensities[i + 1] / intensities[i] - 1 for i in range(0, frames, 2)])
+            ret = ret1 if sum(ret1) > sum(ret2) else ret2
+
+            with open(file_path + '/' + _file_name + '_ret.csv', 'w') as ret_file:
+                writer = csv.writer(ret_file)
+                writer.writerows(list(np.array([wavelenth, ret]).T))
+
+if __name__ == "__main__":
+
+        # get_FSRS(frames=1000, center_wavelenth=630, _file_name=("FSRS-"+"SP"))
+
+    for i in range(430, 671, 10):
+        get_FSRS(frames=10000, center_wavelenth=i, _file_name=("FSRS-Limonene-SS" + str(i) + "nm"))
+        print(str(i) + "nm, Experiment Completed")
+
+        # file_name = "SRS_data.spe"
+
+        # dataset = experiment.Capture(1000)
+
+        # data_format = dataset.GetFrame(0, 0).Format
+
+        # file_manager.SaveFile(dataset, file_name)
+
+        # data1 = [dataset.GetFrame(0, i) for i in range(0, 1000, 2)]
+        # data2 = [dataset.GetFrame(0, i) for i in range(1, 1000, 2)]
+        
+        # testdata = convert_buffer(data1[0].GetData(), data1[0].Format)
+
+        # print(testdata)
+
+        # data1 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(0, 1000, 2)]), dataset.Regions, data_format)
+        # data2 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(1, 1000, 2)]), dataset.Regions, data_format)
+
+        # file_manager.SaveFile(data1, "on_data.spe")
+        # file_manager.SaveFile(data2, "off_data.spe")
 
 
 
