@@ -178,36 +178,19 @@ def get_FSRS(frames, center_wavelenth, _file_name):
                 writer = csv.writer(ret_file)
                 writer.writerows(list(np.array([wavelenth, ret]).T))
 
+            with open(file_path + '/' + _file_name + '_ret1.csv', 'w') as ret_file:
+                writer = csv.writer(ret_file)
+                writer.writerows(list(np.array([wavelenth, ret1]).T))
+
+            with open(file_path + '/' + _file_name + '_ret2.csv', 'w') as ret_file:
+                writer = csv.writer(ret_file)
+                writer.writerows(list(np.array([wavelenth, ret2]).T))
+            
+
 if __name__ == "__main__":
 
-        # get_FSRS(frames=1000, center_wavelenth=630, _file_name=("FSRS-"+"SP"))
+    # get_FSRS(frames=1000, center_wavelenth=630, _file_name=("FSRS-"+"SP"))
 
     for i in range(430, 671, 10):
-        get_FSRS(frames=10000, center_wavelenth=i, _file_name=("FSRS-Limonene-SS" + str(i) + "nm"))
+        get_FSRS(frames=2000, center_wavelenth=i, _file_name=("FSRS-" +"230901-"+"2000Frames-"+ str(i) + "nm"))
         print(str(i) + "nm, Experiment Completed")
-
-        # file_name = "SRS_data.spe"
-
-        # dataset = experiment.Capture(1000)
-
-        # data_format = dataset.GetFrame(0, 0).Format
-
-        # file_manager.SaveFile(dataset, file_name)
-
-        # data1 = [dataset.GetFrame(0, i) for i in range(0, 1000, 2)]
-        # data2 = [dataset.GetFrame(0, i) for i in range(1, 1000, 2)]
-        
-        # testdata = convert_buffer(data1[0].GetData(), data1[0].Format)
-
-        # print(testdata)
-
-        # data1 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(0, 1000, 2)]), dataset.Regions, data_format)
-        # data2 = data_manager.CreateImageDataSet(List[Array]([dataset.GetFrame(0, i).GetData() for i in range(1, 1000, 2)]), dataset.Regions, data_format)
-
-        # file_manager.SaveFile(data1, "on_data.spe")
-        # file_manager.SaveFile(data2, "off_data.spe")
-
-
-
-
-

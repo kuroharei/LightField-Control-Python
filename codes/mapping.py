@@ -33,13 +33,16 @@ from PrincetonInstruments.LightField.AddIns import *
 from PrincetonInstruments.LightField.AddIns import *
 
 
+# Write in file paths of dlls needed. 
 clr.AddReference("C:\\Program Files\\Thorlabs\\Kinesis\\Thorlabs.MotionControl.DeviceManagerCLI.dll")
 clr.AddReference("C:\\Program Files\\Thorlabs\\Kinesis\\Thorlabs.MotionControl.GenericMotorCLI.dll")
-clr.AddReference("C:\\Program Files\\Thorlabs\\Kinesis\\ThorLabs.MotionControl.KCube.DCServoCLI.dll")
+clr.AddReference("C:\\Program Files\\Thorlabs\\Kinesis\\ThorLabs.MotionControl.IntegratedStepperMotorsCLI.dll")
+
+# Import functions from dlls. 
 from Thorlabs.MotionControl.DeviceManagerCLI import *
 from Thorlabs.MotionControl.GenericMotorCLI import *
-from Thorlabs.MotionControl.KCube.DCServoCLI import *
-from System import Decimal
+from Thorlabs.MotionControl.IntegratedStepperMotorsCLI import *
+from System import Decimal 
 
 
 def device_found(experiment):
@@ -79,15 +82,15 @@ def save_file(filename, experiment):
         ExperimentSettings.FileNameGenerationAttachTime,
         False)
     
-def init_mount():
+def init_mount(serial_number):
 
     try:
         # Create new device
-        serial_no = str("27004678")
+        serial_no = str(serial_number)
 
         DeviceManagerCLI.BuildDeviceList()
 
-        device = KCubeDCServo.CreateKCubeDCServo(serial_no)
+        device = CageRotator.CreateCageRotator(serial_no)
         print(DeviceManagerCLI.GetDeviceList())
         # Connect, begin polling, and enable
         device.Connect(serial_no)
@@ -111,7 +114,7 @@ def init_mount():
         m_config = device.LoadMotorConfiguration(serial_no,
                                                 DeviceConfiguration.DeviceSettingsUseOptionType.UseFileSettings)
 
-        m_config.DeviceSettingsName = "PRM1/MZ8"
+        m_config.DeviceSettingsName = "K10CR1/M"
 
         m_config.UpdateCurrentConfiguration()
 
@@ -134,11 +137,33 @@ def init_lightfield():
 
     return auto
 
-def rotate_get_frame(auto, device, angle, _file_name):
+def rotate(device, angle):
+    device.MoveTo(Decimal(angle), 20000)  # 10s timeout again
+    time.sleep(1)
+    print(f'Device now at position {device.Position}')
+    time.sleep(1)
+
+def get_frame(auto, expe, _file_name):
     application = auto.LightFieldApplication
     experiment = application.Experiment
 
-    experiment.Load("Experiment3")
+    experiment.Load(expe)
+
+    # Check for device and inform user if one is needed
+    if device_found(experiment) == True:
+        # Pass location of saved file
+        save_file(_file_name, experiment)
+
+        # Acquire image in LightField
+        experiment.Acquire()
+
+        time.sleep(10)
+
+def rotate_get_frame(auto, device, angle, expe, _file_name):
+    application = auto.LightFieldApplication
+    experiment = application.Experiment
+
+    experiment.Load(expe)
     
     device.MoveTo(Decimal(angle), 20000)  # 10s timeout again
     time.sleep(1)
@@ -153,20 +178,61 @@ def rotate_get_frame(auto, device, angle, _file_name):
         # Acquire image in LightField
         experiment.Acquire()
 
-        time.sleep(30)
+        time.sleep(20)
 
 
 
 if __name__ == "__main__":
 
-    device = init_mount()
+    VIS_S_angle = 212
+    VIS_P_angle = 167
+
+    SFG_S_angle = 168
+    SFG_P_angle = 123
+
+    VIS_device = init_mount('55358884')
+    SFG_device = init_mount('55355234')
     auto = init_lightfield()
 
-    for angle in range(0, 361, 2):
-        rotate_get_frame(auto, device, angle, (str(angle) + "degree"))
-        print(str(angle) + "degree complete!")
+    # for angle in range(100, 141, 3):
+    #     # rotate_get_frame(auto, device1, angle, "HRBBSFGVS-ProEM",("VIS" + str(angle) + "degree"))
+    #     rotate_get_frame(auto, device2, angle, "HRBBSFGVS-ProEM",("SFG" + str(angle) + "degree"))
+    #     print(str(angle) + "degree complete!")
 
-    device.Disconnect()
+    # rotate(SFG_device, SFG_S_angle)
+    # for angle in range(VIS_S_angle - 50, VIS_S_angle + 50, 3):
+    #     rotate(VIS_device, angle)
+    #     get_frame(auto, "HRBBSFGVS-ProEM", ("DMSO-S" + str(angle) + "P"))
+    #     time.sleep(100)
+    
+    # rotate(SFG_device, SFG_P_angle)
+    # for angle in range(VIS_S_angle - 50, VIS_S_angle + 50, 3):
+    #     rotate(VIS_device, angle)
+    #     get_frame(auto, "HRBBSFGVS-ProEM", ("DMSO-P" + str(angle) + "P"))
+    #     time.sleep(100)
+    
+    # rotate(VIS_device, VIS_S_angle)
+    # for angle in range(SFG_S_angle - 50, SFG_S_angle + 50, 3):
+    #     rotate(SFG_device, angle)
+    #     get_frame(auto, "HRBBSFGVS-ProEM", ("DMSO-" + str(angle) + "SP"))
+    #     time.sleep(100)
+
+    # rotate(VIS_device, VIS_P_angle)
+    # for angle in range(SFG_S_angle - 50, SFG_S_angle + 50, 3):
+    #     rotate(SFG_device, angle)
+    #     get_frame(auto, "HRBBSFGVS-ProEM", ("DMSO            -" + str(angle) + "PP"))
+    #     time.sleep(100)
+
+    # for angle in range(-50, 50, 3):
+    #     rotate(SFG_device, SFG_S_angle + angle)
+    #     rotate(VIS_device, VIS_S_angle + angle)
+    #     get_frame(auto, "HRBBSFGVS-ProEM", ("DMSO-" + str(angle) + "P"))
+    #     time.sleep(100)
+
+    
+
+    VIS_device.Disconnect()
+    SFG_device.Disconnect()
 
 
 
