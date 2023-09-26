@@ -216,11 +216,9 @@ class DelayStage:
             raise Exception(axis + " can't move!", ret)
     
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    delayStage = DelayStage("COM4", 19200, "SMC", 0xCC, True)
-    delayStage.home("X")
-    delayStage.moveto("X", 170)
-    delayStage.close()
-
-
+#     delayStage = DelayStage("COM4", 19200, "SMC", 0xCC, True)
+#     delayStage.home("X")
+#     delayStage.moveto("X", 170)
+#     delayStage.close()
