@@ -40,7 +40,7 @@ class Experiment:
         self.auto = Automation(True, List[String]())
         self.application = self.auto.LightFieldApplication
         self.experiment = self.application.Experiment
-        self.aquireCompleted = AutoResetEvent(False)
+        self.acquireCompleted = AutoResetEvent(False)
         self.experiment.Load(experiment)
         self.experiment.ExperimentCompleted += self.experiment_completed
     
@@ -78,10 +78,10 @@ class Experiment:
         self.experiment.SetValue(ExperimentSettings.FileNameGenerationAttachTime, False)
 
 
-    def get_frame(file_name):
+    def get_frame(self, file_name):
 
         # Check for device and inform user if one is needed
-        if device_found() == True:
+        if self.device_found() == True:
             # Pass location of saved file
             self.save_file(file_name)
 
