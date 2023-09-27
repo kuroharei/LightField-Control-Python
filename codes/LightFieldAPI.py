@@ -34,15 +34,23 @@ from PrincetonInstruments.LightField.AddIns import *
 
 
 class Experiment:
-    def __init__(self) -> None:
+    def __init__(self, experiment) -> None:
         # Create the LightField Application (true for visible)
         # The 2nd parameter forces LF to load with no experiment 
         self.auto = Automation(True, List[String]())
-        
+        self.application = self.auto.LightFieldApplication
+        self.experiment = self.application.Experiment
+        self.aquireCompleted = AutoResetEvent(False)
+        self.experiment.Load(experiment)
+        self.experiment.ExperimentCompleted += self.experiment_completed
+    
+    def load_experiment(self, experiment):
+        self.experiment.Load(experiment)
+        return self.device_found()
 
-    def device_found(self, experiment):
+    def device_found(self):
         # Find connected device
-        for device in experiment.ExperimentDevices:
+        for device in self.experiment.ExperimentDevices:
             if device.Type == DeviceType.Camera:
                 return True
         
@@ -51,40 +59,36 @@ class Experiment:
         return False  
 
     def experiment_completed(self, sender, event_args):    
-        print("Experiment Completed")    
+        print("Aquisition Completed")    
         # Sets the state of the event to signaled,
         # allowing one or more waiting threads to proceed.
-        acquireCompleted.Set()
+        self.acquireCompleted.Set()
 
-    def save_file(self, filename, experiment):    
+    def save_file(self, filename):    
         # Set the base file name
-        experiment.SetValue(ExperimentSettings.FileNameGenerationBaseFileName, Path.GetFileName(filename))
+        self.experiment.SetValue(ExperimentSettings.FileNameGenerationBaseFileName, Path.GetFileName(filename))
         
         # Option to Increment, set to false will not increment
-        experiment.SetValue(ExperimentSettings.FileNameGenerationAttachIncrement, False)
+        self.experiment.SetValue(ExperimentSettings.FileNameGenerationAttachIncrement, False)
 
         # Option to add date
-        experiment.SetValue(ExperimentSettings.FileNameGenerationAttachDate, False)
+        self.experiment.SetValue(ExperimentSettings.FileNameGenerationAttachDate, False)
 
         # Option to add time
-        experiment.SetValue(ExperimentSettings.FileNameGenerationAttachTime, False)
+        self.experiment.SetValue(ExperimentSettings.FileNameGenerationAttachTime, False)
 
 
-    def get_frame(expe, _file_name):
-        self.application = self.auto.LightFieldApplication
-        self.experiment = self.application.Experiment
-
-        self.experiment.Load(expe)
+    def get_frame(file_name):
 
         # Check for device and inform user if one is needed
-        if device_found(experiment) == True:
+        if device_found() == True:
             # Pass location of saved file
-            save_file(_file_name, experiment)
+            self.save_file(file_name)
 
             # Acquire image in LightField
-            experiment.Acquire()
+            self.experiment.Acquire()
 
-            time.sleep(10)
+            self.acquireCompleted.WaitOne()
 
 
 
