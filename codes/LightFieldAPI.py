@@ -42,9 +42,11 @@ class Experiment:
         self.filemanager = self.application.FileManager
         self.experiment = self.application.Experiment
         self.acquireCompleted = AutoResetEvent(False)
-        self.exportCompleted = AutoResetEvent(False)
         self.experimentName = experimentName
         self.experiment.Load(experimentName)
+
+    def __del__(self):
+        os.system('taskkill /f /im %s' % 'AddInProcess.exe')
     
     def load_experiment(self, experiment):
         self.experiment.Load(experiment)
@@ -65,10 +67,6 @@ class Experiment:
         # Sets the state of the event to signaled,
         # allowing one or more waiting threads to proceed.
         self.acquireCompleted.Set()
-    
-    def export_completed(self, sender, event_args):
-        print("Export Completed")
-        self.exportCompleted.Set()
 
     def save_file(self, filename):    
         # Set the base file name
@@ -86,11 +84,9 @@ class Experiment:
 
     def get_frame(self, file_name):
 
-        self.experiment.Load(self.experimentName)
         # Check for device and inform user if one is needed
         if self.device_found() == True:
             self.experiment.ExperimentCompleted += self.acquisition_completed
-            self.filemanager.ExportCompleted += self.export_completed
             # Pass location of saved file
             self.save_file(file_name)
 
@@ -98,6 +94,4 @@ class Experiment:
             self.experiment.Acquire()
 
             self.acquireCompleted.WaitOne()
-            self.exportCompleted.WaitOne()
             self.experiment.ExperimentCompleted -= self.acquisition_completed
-            self.filemanager.ExportCompleted -= self.export_completed

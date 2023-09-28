@@ -35,6 +35,9 @@ class DelayStage:
         else:
             raise Exception("Can't connect!", ret)
         
+    def __del__(self):
+        self.close()
+        
     def close(self):
         ret = ftcore.ft_close(self.handle)
         if ret == ftcore.FT_SUCESS:
