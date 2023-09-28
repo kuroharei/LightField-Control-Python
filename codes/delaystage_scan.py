@@ -10,7 +10,7 @@ def scan(start, end, step, com, axis, experimentName):
     delaystage.home(axis)
     for pos in np.arange(start, end, step):
         delaystage.moveto(axis, pos)
-        experiment.get_frame(str(pos)+"mm")
+        experiment.get_frame(str(pos).replace(".", "_")+"mm")
 
 if __name__ == "__main__":
     # 可以按照下面注释掉的例子写指令，写好之后运行代码就可以了（Ctrl+F5或者右上角的运行键）

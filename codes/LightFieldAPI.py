@@ -34,14 +34,17 @@ from PrincetonInstruments.LightField.AddIns import *
 
 
 class Experiment:
-    def __init__(self, experiment) -> None:
+    def __init__(self, experimentName) -> None:
         # Create the LightField Application (true for visible)
         # The 2nd parameter forces LF to load with no experiment 
         self.auto = Automation(True, List[String]())
         self.application = self.auto.LightFieldApplication
+        self.filemanager = self.application.FileManager
         self.experiment = self.application.Experiment
         self.acquireCompleted = AutoResetEvent(False)
-        self.experimentName = experiment
+        self.exportCompleted = AutoResetEvent(False)
+        self.experimentName = experimentName
+        self.experiment.Load(experimentName)
     
     def load_experiment(self, experiment):
         self.experiment.Load(experiment)
@@ -57,11 +60,15 @@ class Experiment:
         print("Camera not found. Please add a camera and try again.")
         return False  
 
-    def experiment_completed(self, sender, event_args):    
-        print("Aquisition Completed")    
+    def acquisition_completed(self, sender, event_args):    
+        print("Acquisition Completed")
         # Sets the state of the event to signaled,
         # allowing one or more waiting threads to proceed.
         self.acquireCompleted.Set()
+    
+    def export_completed(self, sender, event_args):
+        print("Export Completed")
+        self.exportCompleted.Set()
 
     def save_file(self, filename):    
         # Set the base file name
@@ -82,19 +89,15 @@ class Experiment:
         self.experiment.Load(self.experimentName)
         # Check for device and inform user if one is needed
         if self.device_found() == True:
-
-            # self.experiment.ExperimentCompleted += self.experiment_completed
+            self.experiment.ExperimentCompleted += self.acquisition_completed
+            self.filemanager.ExportCompleted += self.export_completed
             # Pass location of saved file
             self.save_file(file_name)
 
             # Acquire image in LightField
             self.experiment.Acquire()
 
-            # self.acquireCompleted.WaitOne()
-            time.sleep(15)
-            # self.experiment.ExperimentCompleted -= self.experiment_completed
-
-
-
-
-
+            self.acquireCompleted.WaitOne()
+            self.exportCompleted.WaitOne()
+            self.experiment.ExperimentCompleted -= self.acquisition_completed
+            self.filemanager.ExportCompleted -= self.export_completed
