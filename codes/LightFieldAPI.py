@@ -41,8 +41,7 @@ class Experiment:
         self.application = self.auto.LightFieldApplication
         self.experiment = self.application.Experiment
         self.acquireCompleted = AutoResetEvent(False)
-        self.experiment.Load(experiment)
-        self.experiment.ExperimentCompleted += self.experiment_completed
+        self.experimentName = experiment
     
     def load_experiment(self, experiment):
         self.experiment.Load(experiment)
@@ -80,15 +79,22 @@ class Experiment:
 
     def get_frame(self, file_name):
 
+        self.experiment.Load(self.experimentName)
         # Check for device and inform user if one is needed
         if self.device_found() == True:
+
+            # self.experiment.ExperimentCompleted += self.experiment_completed
             # Pass location of saved file
             self.save_file(file_name)
 
             # Acquire image in LightField
             self.experiment.Acquire()
 
-            self.acquireCompleted.WaitOne()
+            # self.acquireCompleted.WaitOne()
+            time.sleep(15)
+            # self.experiment.ExperimentCompleted -= self.experiment_completed
+
+
 
 
 
