@@ -81,9 +81,13 @@ class Experiment:
         # Option to add time
         self.experiment.SetValue(ExperimentSettings.FileNameGenerationAttachTime, False)
 
+    def set_frames_number(self, frames):
+        self.experiment.SetValue(ExperimentSettings.AcquisitionFramesToStore, str(frames))
+
+    def set_center_wavelength(self, center_wavelength):
+        self.experiment.SetValue(SpectrometerSettings.GratingCenterWavelength, str(center_wavelength))
 
     def get_frame(self, file_name):
-
         # Check for device and inform user if one is needed
         if self.device_found() == True:
             self.experiment.ExperimentCompleted += self.acquisition_completed

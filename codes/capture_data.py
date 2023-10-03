@@ -110,7 +110,7 @@ experiment = application.Experiment
 file_manager = application.FileManager
 data_manager = application.DataManager
 
-def get_FSRS(frames, center_wavelenth, _file_name):
+def get_FSRS(frames, center_wavelength, _file_name):
     
     experiment.Load("FSRS-Blaze")
 
@@ -126,7 +126,7 @@ def get_FSRS(frames, center_wavelenth, _file_name):
         pixels = 1340
 
         experiment.SetValue(ExperimentSettings.AcquisitionFramesToStore, str(frames))
-        experiment.SetValue(SpectrometerSettings.GratingCenterWavelength, str(center_wavelenth))
+        experiment.SetValue(SpectrometerSettings.GratingCenterWavelength, str(center_wavelength))
 
         # try:
 
@@ -156,14 +156,14 @@ def get_FSRS(frames, center_wavelenth, _file_name):
 
         file_path = '/'.join(directory.split('\\'))
         with open(file_path + '/' + _file_name + '.csv') as f:
-            wavelenth = []
+            wavelength = []
             intensities = []
             intensity = []
             pixel = 0
             for line in f:
                 x, y = map(float, line.split(','))
                 if pixel < 1340:
-                    wavelenth.append(x)
+                    wavelength.append(x)
                 intensity.append(y)
                 pixel += 1
                 if pixel % pixels == 0:
@@ -176,21 +176,21 @@ def get_FSRS(frames, center_wavelenth, _file_name):
 
             with open(file_path + '/' + _file_name + '_ret.csv', 'w') as ret_file:
                 writer = csv.writer(ret_file)
-                writer.writerows(list(np.array([wavelenth, ret]).T))
+                writer.writerows(list(np.array([wavelength, ret]).T))
 
             with open(file_path + '/' + _file_name + '_ret1.csv', 'w') as ret_file:
                 writer = csv.writer(ret_file)
-                writer.writerows(list(np.array([wavelenth, ret1]).T))
+                writer.writerows(list(np.array([wavelength, ret1]).T))
 
             with open(file_path + '/' + _file_name + '_ret2.csv', 'w') as ret_file:
                 writer = csv.writer(ret_file)
-                writer.writerows(list(np.array([wavelenth, ret2]).T))
+                writer.writerows(list(np.array([wavelength, ret2]).T))
             
 
 if __name__ == "__main__":
 
-    # get_FSRS(frames=1000, center_wavelenth=630, _file_name=("FSRS-"+"SP"))
+    # get_FSRS(frames=1000, center_wavelength=630, _file_name=("FSRS-"+"SP"))
 
     for i in range(430, 671, 10):
-        get_FSRS(frames=2000, center_wavelenth=i, _file_name=("FSRS-" +"230901-"+"2000Frames-"+ str(i) + "nm"))
+        get_FSRS(frames=2000, center_wavelength=i, _file_name=("FSRS-" +"230901-"+"2000Frames-"+ str(i) + "nm"))
         print(str(i) + "nm, Experiment Completed")
