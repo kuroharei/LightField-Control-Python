@@ -118,7 +118,7 @@ def scan(temp, wavelength, exposureTime, ystart, yend, start, end, step, com, ax
                     calibrationValues[1],
                     calibrationValues[2]))
                 
-                with open(file_path + "/" + str(pos).replace(".", "_") + "mm.csv", "w") as f:
+                with open(file_path + "/" + str(format(pos, ".4f")).replace(".", "_") + "mm.csv", "w") as f:
                     writer = csv.writer(f)
                     writer.writerows(list(np.array([list(calibrationValues), list(arr)]).T))
                 
