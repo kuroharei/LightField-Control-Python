@@ -38,11 +38,13 @@ def scan(temp, wavelength, exposureTime, ystart, yend, start, end, step, com, ax
                 (ret, temperature) = sdk.GetTemperature()
                 print("Function GetTemperature returned {} current temperature = {}".format(
                 ret, temperature), end="\r")
+                if temp >= temperature:
+                    break
 
             print("")
             print("Temperature stabilized")
 
-            ret = sdk.SetReadMode(codes.Read_Mode.MULTI_TRACK)
+            ret = sdk.SetReadMode(codes.Read_Mode.FULL_VERTICAL_BINNING)
             print("Function SetReadMode returned {}".format(ret))
             
             ret = sdk.SetTriggerMode(codes.Trigger_Mode.INTERNAL)
@@ -61,7 +63,7 @@ def scan(temp, wavelength, exposureTime, ystart, yend, start, end, step, com, ax
             print("Function SetExposureTime returned {}".format(ret))
 
         #Configure Spectrograph
-            shm = spc.SetGrating(0, 1)
+            shm = spc.SetGrating(0, 2)
             print("Function SetGrating returned {}".format(
                 spc.GetFunctionReturnDescription(shm, 64)[1]))
 
@@ -82,6 +84,7 @@ def scan(temp, wavelength, exposureTime, ystart, yend, start, end, step, com, ax
             
             delaystage = DelayStage(com, 19200, "SMC", 0xCC, True)
             delaystage.home(axis)
+            delaystage.set_vel(axis, 1.0)
 
         #Start Acquisition
             for pos in np.arange(start, end, step):
@@ -117,7 +120,7 @@ def scan(temp, wavelength, exposureTime, ystart, yend, start, end, step, com, ax
                 
                 with open(file_path + "/" + str(pos).replace(".", "_") + "mm.csv", "w") as f:
                     writer = csv.writer(f)
-                    writer.writerows(list(np.array([list(wavelength), list(arr)]).T))
+                    writer.writerows(list(np.array([list(calibrationValues), list(arr)]).T))
                 
             ret = sdk.ShutDown()
             print("Function Shutdown returned {}".format(ret))
@@ -130,4 +133,4 @@ def scan(temp, wavelength, exposureTime, ystart, yend, start, end, step, com, ax
         print("Cannot continue, could not initialize camera")
 
 if __name__=="__main__":
-    scan(-80, 532, 1.0, 10, 30, 5.0, 15.0, 0.1, "COM4", "X", "D:/ChenLuozhou/20231113")
+    scan(-70, 450, 5.0, 1, 200, 104.8050, 105.7050, 0.03, "COM3", "X", "D:/zbj/20231115/3")
