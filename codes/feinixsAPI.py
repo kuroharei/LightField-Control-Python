@@ -19,7 +19,7 @@ class DelayStage:
         "SMC": ftcore.CONTROLLER_TYPE_SMC,
         "AMC": ftcore.CONTROLLER_TYPE_AMC,
         "NANO": ftcore.CONTROLLER_TYPE_NANO,
-        "NANO": ftcore.CONTROLLER_TYPE_MINI04
+        "MINI0S": ftcore.CONTROLLER_TYPE_MINI04
     }
 
     limit_isnegative = {

@@ -1,3 +1,9 @@
+from feinixsAPI import *
+
+from LightFieldAPI import *
+
+import numpy as np
+
 # Import the .NET class library
 import clr, ctypes
 
@@ -6,9 +12,6 @@ import sys
 
 # Import os module
 import os
-
-# numpy import
-import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -149,7 +152,7 @@ def get_FSRS(frames, center_wavelength, _file_name):
         # Acquire image in LightField
         experiment.Acquire()
 
-        time.sleep(60 + frames * 0.001)
+        time.sleep(70 + frames * 0.001)
 
         # Get image directory
         directory = experiment.GetValue(ExperimentSettings.FileNameGenerationDirectory)
@@ -185,17 +188,30 @@ def get_FSRS(frames, center_wavelength, _file_name):
             with open(file_path + '/' + _file_name + '_ret2.csv', 'w', newline='') as ret_file:
                 writer = csv.writer(ret_file)
                 writer.writerows(list(np.array([wavelength, ret2]).T))
-            
+
+def scan(start, end, step, com, axis, experimentName):
+    delaystage = DelayStage(com, 19200, "SMC", 0xCC, True)
+    delaystage.set_homingvel(axis, 5.0)
+    delaystage.home(axis)
+    delaystage.set_vel(axis, 1.0)
+    for pos in np.arange(start, end, step):
+        delaystage.moveto(axis, pos)
+        get_FSRS(frames=100000, center_wavelength=503, _file_name=("MG-240uJ-100000f-Loss-SS-" + str(format(pos, ".4f")).replace(".", "_") + "mm"))
+    del delaystage
+    del experiment
+
+
+
+# if __name__ == "__main__":
+
+    # get_FSRS(frames=2000, center_wavelength=630, _file_name=("FSRS-CYC-580mW-2000f-"+"SS"))
+
+    # for i in range(550, 661, 15):
+        # get_FSRS(frames=2000, center_wavelength=i, _file_name=("FSRS-Cyclohexene-150mW-2000f-SS-"+ str(i) + "nm"))
+    #     print(str(i) + "nm, Experiment Completed")
 
 if __name__ == "__main__":
-
-    # get_FSRS(frames=100000, center_wavelength=503, _file_name=("MG-240uJ-100000f-1800g-SP-Loss503nm"))
-    # get_FSRS(frames=100000, center_wavelength=493, _file_name=("MG-240uJ-100000f-1800g-SP-Loss493nm"))
-
-    for i in range(550, 591, 10):
-        get_FSRS(frames=100000, center_wavelength=i, _file_name=("MG-240uJ-100000f-1800g-SP-Gain"+ str(i) + "nm"))
-        print(str(i) + "nm, Experiment Completed")
-
-    # for i in range(540, 680, 10):
-    #     get_FSRS(frames=20000, center_wavelength=i, _file_name=("empty-200mW-20000f-SS-Gain"+ str(i) + "nm"))
-    #     print(str(i) + "nm, Experiment Completed")
+    # 可以按照下面注释掉的例子写指令，写好之后运行代码就可以了（Ctrl+F5或者右上角的运行键）
+    # scan(0, 50, 0.1, "COM5","Y", "CJM")
+    # scan(14, 32, 0.75, "COM12", "X", "cross")
+    scan(81, 102, 2.0, "COM4", "X", "FSRS--Gain-Blaze")
